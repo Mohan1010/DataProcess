@@ -5,7 +5,7 @@ from mysql.connector import errorcode
 
 def MySQLConn():
     try:
-        conn = mysql.connector.connect(user='root', password='foobar@2', host='127.0.0.1', database='SmartBiz')
+        conn = mysql.connector.connect(user='root', password='ChangePassword', host='127.0.0.1', database='SmartBiz')
         return conn
     except:
         print("ERROR: Unable to connect to the database running on %s.")
@@ -15,6 +15,7 @@ def MySQLConn():
 def Main():
     MyDBConn=MySQLConn()
     writeJSONAttrToFile(MyDBConn)
+
 
 def writeJSONAttrToFile(MyDBConn, jsonDataType):
     SQL="select  page_id, page_type_id,json_extract(extracted_data,'$.%s') as json_data from pages where page_type_id = 62 and status=299" %  jsonDataType
