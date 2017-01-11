@@ -1,24 +1,44 @@
+'''
+Created on Jan 10, 2017
+
+@author: Mohandas Damodaran
+'''
 import mysql.connector
 import json
-import sys
+import sys,os
+import time
+from time import strftime
 from mysql.connector import errorcode
+from Utility import commonUtility
+class Global:
+    configData=commonUtility.getConfigData('/home/mohandas/Config.dat')
+    User=configData["User"]
+    Host=configData["Host"]
+    DataBase=configData["DataBase"]
+    DBPassword=commonUtility.DecryptPassword(configData["DBPassword"])
+    LogLoc=configData["LogLoc"]
+    logFP,logFileName=commonUtility.GetLogFP(LogLoc)
 
+def closeLogFP():
+    GV.logFP.close()
+
+GV = Global()
 def MySQLConn():
     try:
-        conn = mysql.connector.connect(user='root', password='ChangePassword', host='127.0.0.1', database='SmartBiz')
+        print GV.User, GV.DBPassword, GV.Host, GV.DataBase
+        conn = mysql.connector.connect(user=GV.User, password=GV.DBPassword, host=GV.Host, database=GV.DataBase)
         return conn
     except:
-        print("ERROR: Unable to connect to the database running on %s.")
-        conn.close()
+        print("ERROR: Unable to connect to the database running on %s." % GV.Host)
         sys.exit()
 
-def Main():
+def Main(jsonDataType):
     MyDBConn=MySQLConn()
-    writeJSONAttrToFile(MyDBConn)
+    writeJSONAttrToFile(MyDBConn,jsonDataType)
 
 
 def writeJSONAttrToFile(MyDBConn, jsonDataType):
-    SQL="select  page_id, page_type_id,json_extract(extracted_data,'$.%s') as json_data from pages where page_type_id = 62 and status=299" %  jsonDataType
+    SQL="SELECT page_id, page_type_id, json_extract(extracted_data,'$.%s') AS json_data FROM pages WHERE page_type_id = 62 AND status=299" %  jsonDataType
     try:
         fp = open("/home/mohandas/json_attributes.csv", 'w')
         cur = MyDBConn.cursor()
@@ -37,7 +57,7 @@ def writeJSONAttrToFile(MyDBConn, jsonDataType):
                         DataLine = DataLine + ","+str(value2)
                         if cnt == 0:
                             Header = Header + "," + key + "_" + key2
-                
+
             if cnt == 0:
                 fp.write(Header+"\n")
             fp.write(DataLine+"\n")
@@ -47,7 +67,7 @@ def writeJSONAttrToFile(MyDBConn, jsonDataType):
     except Exception, e:
         print(str(e) )
         return 0
-    
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         Main(sys.argv[1] )
