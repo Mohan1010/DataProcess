@@ -14,6 +14,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.encoders import encode_base64
 
+import mysql.connector
+from mysql.connector import errorcode
+
 class Email_Class:
     fromEmail="mohandas@smartbizloans.com"
     toEmail="mohandas@smartbizloans.com"
@@ -66,6 +69,7 @@ class Email_Class:
         s = smtplib.SMTP(SMTPHost)
         s.sendmail(From, To, msg.as_string())
         s.quit()
+
 def getConfigData(configFile):
     configFile = open(configFile,'r')
     configData={}
@@ -92,7 +96,7 @@ def SortAndRemoveDupFromArray(ArrayList):
 def GetLogFP(LogLoc):
     if not os.path.exists(LogLoc):
         try:
-            os.mkdir(LogLoc, 0755)
+            os.mkdir(LogLoc)
         except:
             print("ERROR: Couldn't create dir %s." % (LogLoc))
             sendStatusEmail("ERROR in Resource Cost data load process", "Couldn't create the log file dir %s." % LogLoc)
@@ -100,3 +104,45 @@ def GetLogFP(LogLoc):
     FileName=LogLoc+strftime("%d%b%Y-%H_%M_%S",  time.localtime(time.time()))+'.log'
     fp = open(FileName, 'a')
     return fp,FileName
+
+def executeDBCmd(DBConn, Query, Data):
+    try:
+        Cursor = DBConn.cursor()
+        Cursor.execute(Query, Data)
+    except mysql.connector.Error as err:
+        printMysqlError(err)
+        return False
+    return True
+
+def executeDBUpdateCmd(DBConn, Query ):
+    try:
+        Cursor = DBConn.cursor()
+        Cursor.execute(Query)
+    except mysql.connector.Error as err:
+        printMysqlError(err)
+        return False
+    return True
+
+def getSingleValFromDB(DBConn, Query):
+    cursor = DBConn.cursor()
+    cursor.execute (Query)
+    row = cursor.fetchone()
+    cursor.close()
+    if row:
+        return row[0]
+    else:
+        return None
+
+def getMutiColumnFromDB(DBConn, Query):
+    cursor = DBConn.cursor()
+    cursor.execute (Query)
+    row = cursor.fetchone()
+    cursor.close()
+    if row:
+        return row
+    else:
+        return None
+
+def printMysqlError(err):
+    print("Exception: {}".format(err))
+
